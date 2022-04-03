@@ -227,18 +227,33 @@ class Generator(jit.ScriptModule):
 
     def __init__(self, starting_image_size=4):
         super(Generator, self).__init__()
+        self.starting_image_size = starting_image_size
+
+        self.dense = nn.Linear(128, 2048, bias=True)
+        self.layers = nn.Sequential(
+                ResBlockUp(128),
+                ResBlockUp(128),
+                ResBlockUp(128),
+                BatchNorm2d(128),
+                nn.ReLU(),
+                nn.Conv2d(128, 3, kernel_size=3, padding=1),
+                nn.Tanh())
 
     @jit.script_method
     def forward_given_samples(self, z):
         # TODO 1.1: forward the generator assuming a set of samples z have been passed in.
         # Don't forget to re-shape the output of the dense layer into an image with the appropriate size!
-        pass
+        N = z.shape[0]
+        z = self.dense(z)
+        z = z.reshape(N, 128, self.starting_image_size, self.starting_image_size)
+        return self.layers(z)
 
     @jit.script_method
     def forward(self, n_samples: int = 1024):
         # TODO 1.1: Generate n_samples latents and forward through the network.
         # Make sure to cast the latents to type half (for compatibility with torch.cuda.amp.autocast)
-        pass
+        z = torch.randn(n_samples, 128)
+        return forward_given_samples(z)
 
 
 class Discriminator(jit.ScriptModule):
@@ -296,9 +311,17 @@ class Discriminator(jit.ScriptModule):
 
     def __init__(self):
         super(Discriminator, self).__init__()
+        self.layers = nn.Sequential(
+                ResBlockDown(3),
+                ResBlockDown(128),
+                ResBlock(128),
+                ResBlock(128),
+                nn.ReLU())
+        self.dense = nn.Linear(128, 1, bias=True)
 
     @jit.script_method
     def forward(self, x):
         # TODO 1.1: Forward the discriminator assuming a batch of images have been passed in.
         # Make sure to flatten the output of the convolutional layers and sum across the image dimensions before passing to the output layer!
-        pass
+        z = self.layers(x)
+        return self.dense(z.flatten())
