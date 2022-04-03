@@ -16,6 +16,11 @@ class UpSampleConv2D(jit.ScriptModule):
         padding=0,
     ):
         super(UpSampleConv2D, self).__init__()
+        self.input_channels = input_channels
+        self.conv = nn.Conv2d(input_channels, n_filters, kernel_size, padding=padding)
+
+        self.upscale_factor = upscale_factor
+        self.pixel_shuffle = nn.PixelShuffle(upscale_factor)
 
     @jit.script_method
     def forward(self, x):
@@ -25,7 +30,9 @@ class UpSampleConv2D(jit.ScriptModule):
         # 3. Apply convolution.
         # Hint for 2. look at
         # https://pytorch.org/docs/master/generated/torch.nn.PixelShuffle.html#torch.nn.PixelShuffle
-        pass
+        x = x.tile(1, self.input_channels * self.upscale_factor**2, 1, 1)
+        x = self.pixel_shuffle(x)
+        return self.conv(x)
 
 
 class DownSampleConv2D(jit.ScriptModule):
@@ -35,16 +42,28 @@ class DownSampleConv2D(jit.ScriptModule):
         self, input_channels, kernel_size=3, n_filters=128, downscale_ratio=2, padding=0
     ):
         super(DownSampleConv2D, self).__init__()
+        self.input_channels = input_channels
+        self.conv = nn.Conv2d(input_channels, n_filters, kernel_size, padding=padding)
+
+        self.downscale_ratio = downscale_ratio
+        self.pixel_unshuffle = nn.PixelUnshuffle(downscale_ratio)
 
     @jit.script_method
     def forward(self, x):
-        # TODO 1.1: Implement spatial mean pooling.
+        # TODO 1.1: Implement spatial mean pooling
         # 1. Re-arrange to form an image of shape: (batch x channel * upscale_factor^2 x height x width).
         # 2. Then split channel wise into upscale_factor^2 number of images of shape: (batch x channel x height x width).
         # 3. Average the images into one and apply convolution.
         # Hint for 1. look at
         # https://pytorch.org/docs/master/generated/torch.nn.PixelUnshuffle.html#torch.nn.PixelUnshuffle
-        pass
+        N = x.shape[0]
+        H = x.shape[2]
+        W = x.shape[3]
+
+        x = self.pixel_unshuffle(x)
+        x = x.reshape(N, self.downscale_ratio**2, self.input_channels, H, W)
+        x = torch.mean(x, dim=1)
+        return self.conv(x)
 
 
 class ResBlockUp(jit.ScriptModule):
