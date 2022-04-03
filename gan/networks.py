@@ -87,12 +87,21 @@ class ResBlockUp(jit.ScriptModule):
 
     def __init__(self, input_channels, kernel_size=3, n_filters=128):
         super(ResBlockUp, self).__init__()
+        self.layers = nn.Sequential(
+            nn.BatchNorm2d(input_channels),
+            nn.ReLU(),
+            nn.Conv2d(input_channels, n_filters, kernel_size, stride=1, padding=1, bias=False),
+            nn.BatchNorm2d(n_filters),
+            nn.ReLU())
+        self.residual = UpSampleConv2d(n_filters, kernel_size=kernel_size, n_filters=n_filters, padding=1)
+        self.shortcut = UpSampleConv2d(input_channels, kernel_size=kernel_size, n_filters=n_filters, padding=1)
 
     @jit.script_method
     def forward(self, x):
         # TODO 1.1: Forward through the layers and implement a residual connection.
         # Apply self.residual to the output of self.layers and apply self.shortcut to the original input.
-        pass
+        z = self.layers(x)
+        return self.residual(z) + self.shortcut(x)
 
 
 class ResBlockDown(jit.ScriptModule):
@@ -115,12 +124,19 @@ class ResBlockDown(jit.ScriptModule):
 
     def __init__(self, input_channels, kernel_size=3, n_filters=128):
         super(ResBlockDown, self).__init__()
+        self.layers = nn.Sequential(
+                nn.ReLU(),
+                nn.Conv2d(input_channels, n_filters, kernel_size, padding=1),
+                nn.ReLU())
+        self.residual = DownSampleConv2D(n_filters, kernel_size=kernel_size, n_filters=n_filters, padding=1)
+        self.shortcut = DownSampleConv2D(input_channels, kernel_size=1, n_filters=n_filters)
 
     @jit.script_method
     def forward(self, x):
         # TODO 1.1: Forward through the layers and implement a residual connection.
         # Apply self.residual to the output of self.layers and apply self.shortcut to the original input.
-        pass
+        z = self.layers(x)
+        return self.residual(z) + self.shortcut(x)
 
 
 class ResBlock(jit.ScriptModule):
@@ -138,11 +154,16 @@ class ResBlock(jit.ScriptModule):
 
     def __init__(self, input_channels, kernel_size=3, n_filters=128):
         super(ResBlock, self).__init__()
+        self.layers = nn.Sequential(
+                nn.ReLU(),
+                nn.Conv2d(input_channels, n_filters, kernel_size, padding=1),
+                nn.ReLU(),
+                nn.Conv2d(n_filters, n_filters, kernel_size, padding=1))
 
     @jit.script_method
     def forward(self, x):
         # TODO 1.1: Forward the conv layers. Don't forget the residual connection!
-        pass
+        return x + self.layers(x)
 
 
 class Generator(jit.ScriptModule):
