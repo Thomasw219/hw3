@@ -12,12 +12,15 @@ def compute_discriminator_loss(
 ):
     # TODO 1.4.1: Implement LSGAN loss for discriminator.
     # Do not use discrim_interp, interp, lamb. They are placeholders for Q1.5.
-    pass
-
+    real_obj = F.mse_loss(discrim_real, torch.ones_like(discrim_real))
+    fake_obj = F.mse_loss(discrim_fake, torch.zeros_like(discrim_fake))
+    # Negative because the optimizer for discriminator maximizes (because of default GAN)
+    return -1 * (real_obj + fake_obj) / 4
 
 def compute_generator_loss(discrim_fake):
     # TODO 1.4.1: Implement LSGAN loss for generator.
-    pass
+    fake_obj = F.mse_loss(discrim_fake, torch.ones_like(discrim_fake))
+    return fake_obj / 2
 
 
 if __name__ == "__main__":
