@@ -125,7 +125,7 @@ def train_model(
                 with torch.no_grad():
                     with torch.cuda.amp.autocast():
                         # TODO 1.2: Generate samples using the generator, make sure they lie in the range [0, 1].
-                        generated_samples = gen.forward(n_samples=batch_size)
+                        generated_samples = gen.forward(n_samples=100)
 
                     save_image(
                         generated_samples.data.float(),
