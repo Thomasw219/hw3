@@ -15,7 +15,7 @@ def compute_discriminator_loss(
     real_obj = F.binary_cross_entropy_with_logits(discrim_real, torch.ones_like(discrim_real))
     fake_obj = F.binary_cross_entropy_with_logits(discrim_fake, torch.zeros_like(discrim_fake))
 #    print(real_obj.item(), fake_obj.item())
-    return -1 * (real_obj + fake_obj)
+    return -1 * (real_obj + fake_obj) / 2
 
 
 def compute_generator_loss(discrim_fake):
