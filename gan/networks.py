@@ -30,7 +30,7 @@ class UpSampleConv2D(jit.ScriptModule):
         # 3. Apply convolution.
         # Hint for 2. look at
         # https://pytorch.org/docs/master/generated/torch.nn.PixelShuffle.html#torch.nn.PixelShuffle
-        x = x.tile(1, self.upscale_factor**2, 1, 1)
+        x = x.tile(1, int(self.upscale_factor**2), 1, 1)
         x = self.pixel_shuffle(x)
         return self.conv(x)
 
@@ -61,7 +61,7 @@ class DownSampleConv2D(jit.ScriptModule):
         W = x.shape[3]
 
         x = self.pixel_unshuffle(x)
-        x = x.reshape(N, self.downscale_ratio**2, self.input_channels, H // self.downscale_ratio, W // self.downscale_ratio)
+        x = x.reshape(N, int(self.downscale_ratio**2), self.input_channels, H // self.downscale_ratio, W // self.downscale_ratio)
         x = torch.mean(x, dim=1)
         return self.conv(x)
 

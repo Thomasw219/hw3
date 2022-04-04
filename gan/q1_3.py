@@ -12,12 +12,17 @@ def compute_discriminator_loss(
 ):
     # TODO 1.3.1: Implement GAN loss for discriminator.
     # Do not use discrim_interp, interp, lamb. They are placeholders for Q1.5.
-    pass
+    real_obj = F.binary_cross_entropy_with_logits(discrim_real, torch.ones_like(discrim_real))
+    fake_obj = F.binary_cross_entropy_with_logits(discrim_fake, torch.zeros_like(discrim_fake))
+#    print(real_obj.item(), fake_obj.item())
+    return -1 * (real_obj + fake_obj)
 
 
 def compute_generator_loss(discrim_fake):
     # TODO 1.3.1: Implement GAN loss for generator.
-    pass
+    fake_obj = F.binary_cross_entropy_with_logits(discrim_fake, torch.zeros_like(discrim_fake))
+#    print(fake_obj.item())
+    return -1 * fake_obj
 
 
 if __name__ == "__main__":
