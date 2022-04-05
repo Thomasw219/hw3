@@ -18,12 +18,15 @@ def ae_loss(model, x):
     TODO 2.1.2: fill in MSE loss between x and its reconstruction. 
     return loss, {recon_loss = loss} 
     """
-    
+    N = x.shape[0]
+    recon = model.decoder(model.encoder(x))
+    loss = torch.mean(torch.sum(torch.square(recon - x).view(N, -1), dim=-1))
     return loss, OrderedDict(recon_loss=loss)
 
 def vae_loss(model, x, beta = 1):
     """TODO 2.2.2 : Fill in recon_loss and kl_loss. """
-
+    N = x.shape[0]
+    
     recon_loss = ...
     kl_loss = ...
 
