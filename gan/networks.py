@@ -85,13 +85,13 @@ class ResBlockUp(jit.ScriptModule):
         )
     """
 
-    def __init__(self, input_channels, kernel_size=3, n_filters=128):
+    def __init__(self, input_channels, H, W, kernel_size=3, n_filters=128):
         super(ResBlockUp, self).__init__()
         self.layers = nn.Sequential(
-            nn.BatchNorm2d(input_channels),
+            nn.LayerNorm((input_channels, H, W)), # nn.BatchNorm2d(input_channels),
             nn.ReLU(),
             nn.Conv2d(input_channels, n_filters, kernel_size, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(n_filters),
+            nn.LayerNorm((n_filters, H, W)), # nn.BatchNorm2d(n_filters),
             nn.ReLU())
         self.residual = UpSampleConv2D(n_filters, kernel_size=kernel_size, n_filters=n_filters, padding=1)
         self.shortcut = UpSampleConv2D(input_channels, kernel_size=kernel_size, n_filters=n_filters, padding=1)
@@ -233,10 +233,10 @@ class Generator(jit.ScriptModule):
 
         self.dense = nn.Linear(128, 2048, bias=True)
         self.layers = nn.Sequential(
-                ResBlockUp(128),
-                ResBlockUp(128),
-                ResBlockUp(128),
-                nn.BatchNorm2d(128),
+                ResBlockUp(128, 4, 4),
+                ResBlockUp(128, 8, 8),
+                ResBlockUp(128, 16, 16),
+                nn.LayerNorm((128, 32, 32)), # nn.BatchNorm2d(128),
                 nn.ReLU(),
                 nn.Conv2d(128, 3, kernel_size=3, padding=1),
                 nn.Tanh())

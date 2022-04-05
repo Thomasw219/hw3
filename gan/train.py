@@ -87,20 +87,22 @@ def train_model(
     while iters < num_iterations:
         for train_batch in train_loader:
             with torch.cuda.amp.autocast():
-                train_batch = train_batch.cuda()
+                train_batch = train_batch.cuda().to(torch.half)
                 # TODO 1.2: compute generator outputs and discriminator outputs
                 # 1. Compute generator output -> the number of samples must match the batch size.
                 # 2. Compute discriminator output on the train batch.
                 # 3. Compute the discriminator output on the generated data.
+                N = train_batch.shape[0]
                 discrim_real = disc(train_batch)
-                generated = gen.forward(n_samples=batch_size)
+                generated = gen.forward(n_samples=N)
                 discrim_fake = disc(generated)
 
                 # TODO: 1.5 Compute the interpolated batch and run the discriminator on it.
                 # To compute interpolated data, draw eps ~ Uniform(0, 1)
                 # interpolated data = eps * fake_data + (1-eps) * real_data
-                interp = None
-                discrim_interp = None
+                eps = torch.rand(N, 1, 1, 1, dtype=torch.half, device=gen.dense.weight.data.device)
+                interp = generated * eps + train_batch * (1 - eps)
+                discrim_interp = disc(interp)
 
                 discriminator_loss = disc_loss_fn(
                     discrim_real, discrim_fake, discrim_interp, interp, lamb
@@ -113,7 +115,7 @@ def train_model(
             if iters % 5 == 0:
                 with torch.cuda.amp.autocast():
                     # TODO 1.2: Compute samples and evaluate under discriminator.
-                    discrim_fake = disc(gen.forward(n_samples=batch_size))
+                    discrim_fake = disc(gen.forward(n_samples=N))
 
                     generator_loss = gen_loss_fn(discrim_fake)
                 optim_generator.zero_grad(set_to_none=True)
