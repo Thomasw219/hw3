@@ -23,7 +23,7 @@ def compute_discriminator_loss(
 def compute_generator_loss(discrim_fake):
     # TODO 1.5.1: Implement WGAN-GP loss for generator.
     # loss = - E[D(fake_data)]
-    return torch.mean(discrim_fake)
+    return -1 * torch.mean(discrim_fake)
 
 
 if __name__ == "__main__":
