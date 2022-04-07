@@ -27,7 +27,7 @@ def vae_loss(model, x, beta = 1):
     """TODO 2.2.2 : Fill in recon_loss and kl_loss. """
     N = x.shape[0]
     
-    recon_loss = ...
+    recon_loss = torch.mean(torch.sum(torch.square(recon - x).view(N, -1), dim=-1))
     kl_loss = ...
 
     total_loss = recon_loss + beta*kl_loss
@@ -81,7 +81,7 @@ def get_val_metrics(model, loss_mode, val_loader):
     return avg_dict(all_metrics)
 
 def main(log_dir, loss_mode = 'vae', beta_mode = 'constant', num_epochs = 20, batch_size = 256, latent_size = 256,
-         target_beta_val = 1, grad_clip=1, lr = 1e-3, eval_interval = 5):
+         target_beta_val = 1, grad_clip=1, lr = 1e-3, eval_interval = 1):
 
     os.makedirs('data/'+ log_dir, exist_ok = True)
     train_loader, val_loader = get_dataloaders()
@@ -98,6 +98,9 @@ def main(log_dir, loss_mode = 'vae', beta_mode = 'constant', num_epochs = 20, ba
     elif beta_mode == 'linear':
         beta_fn = linear_beta_scheduler(max_epochs=num_epochs, target_val = target_beta_val) 
 
+    epochs = []
+    epoch_metrics = []
+
     for epoch in range(num_epochs):
         print('epoch', epoch)
         train_metrics = run_train_epoch(model, loss_mode, train_loader, optimizer, beta_fn(epoch))
@@ -108,20 +111,32 @@ def main(log_dir, loss_mode = 'vae', beta_mode = 'constant', num_epochs = 20, ba
         if (epoch+1)%eval_interval == 0:
             print(epoch, train_metrics)
             print(epoch, val_metrics)
+            epochs.append(epoch)
+            epoch_metrics.append(val_metrics)
 
             vis_recons(model, vis_x, 'data/'+log_dir+ '/epoch_'+str(epoch))
             if loss_mode == 'vae':
                 vis_samples(model, 'data/'+log_dir+ '/epoch_'+str(epoch) )
+
+    for k, _ in epoch_metrics[0].items():
+        fig = plt.figure()
+        data = [epoch_metric[k] for epoch_metric in epoch_metrics]
+        plt.plot(epochs, data, label=k)
+        plt.legend()
+        plt.savefig('data/'+log_dir+ '/'+ k)
+        plt.close(fig)
 
 
 if __name__ == '__main__':
     #TODO: Experiments to run : 
     #2.1 - Auto-Encoder
     #Run for latent_sizes 16, 128 and 1024
-    #main('ae_latent1024', loss_mode = 'ae',  num_epochs = 20, latent_size = 1024)
+    latents = [1024, 128, 16]
+    for latent in latents:
+        main('ae_latent{}'.format(latent), loss_mode = 'ae',  num_epochs = 20, latent_size = latent)
 
     #Q 2.2 - Variational Auto-Encoder
-    #main('vae_latent1024', loss_mode = 'vae', num_epochs = 20, latent_size = 1024)
+#    main('vae_latent1024', loss_mode = 'vae', num_epochs = 20, latent_size = 1024)
 
     #Q 2.3.1 - Beta-VAE (constant beta)
     #Run for beta values 0.8, 1.2
