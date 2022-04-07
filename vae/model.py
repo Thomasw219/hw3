@@ -28,7 +28,7 @@ class Encoder(nn.Module):
                 nn.ReLU(),
                 nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),
                 nn.ReLU(),
-                nn.Conv2d(128, 256, kernek_size=3, stride=2, padding=1))
+                nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1))
         self.conv_out_dim = input_shape[1] // 8 * input_shape[2] // 8 * 256
 
         #TODO 2.1.1: fill in self.fc, such that output dimension is self.latent_dim
@@ -88,7 +88,7 @@ class Decoder(nn.Module):
 
     def forward(self, z):
         #TODO 2.1.1: forward pass through the network, first through self.fc, then self.deconvs.
-        x = self.fc(z).reshape(*self.base_size)
+        x = self.fc(z).reshape(z.shape[0], *self.base_size)
         return self.deconvs(x)
 
 class AEModel(nn.Module):
