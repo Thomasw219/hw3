@@ -26,9 +26,11 @@ def ae_loss(model, x):
 def vae_loss(model, x, beta = 1):
     """TODO 2.2.2 : Fill in recon_loss and kl_loss. """
     N = x.shape[0]
-    
+    means, log_vars = model.encoder.forward(x)
+    stds = torch.exp(0.5 * log_vars)
+    recon = model.decoder(means + torch.randn_like(stds) * stds)
     recon_loss = torch.mean(torch.sum(torch.square(recon - x).view(N, -1), dim=-1))
-    kl_loss = ...
+    kl_loss = torch.mean(0.5 * (torch.sum(torch.square(means), dim=-1) + torch.sum(torch.square(stds), dim=-1) - torch.sum(log_vars + 1, dim=-1)))
 
     total_loss = recon_loss + beta*kl_loss
     return total_loss, OrderedDict(recon_loss=recon_loss, kl_loss=kl_loss)
@@ -131,12 +133,12 @@ if __name__ == '__main__':
     #TODO: Experiments to run : 
     #2.1 - Auto-Encoder
     #Run for latent_sizes 16, 128 and 1024
-    latents = [1024, 128, 16]
-    for latent in latents:
-        main('ae_latent{}'.format(latent), loss_mode = 'ae',  num_epochs = 20, latent_size = latent)
+#    latents = [1024, 128, 16]
+#    for latent in latents:
+#        main('ae_latent{}'.format(latent), loss_mode = 'ae',  num_epochs = 20, latent_size = latent)
 
     #Q 2.2 - Variational Auto-Encoder
-#    main('vae_latent1024', loss_mode = 'vae', num_epochs = 20, latent_size = 1024)
+    main('vae_latent1024', loss_mode = 'vae', num_epochs = 20, latent_size = 1024)
 
     #Q 2.3.1 - Beta-VAE (constant beta)
     #Run for beta values 0.8, 1.2

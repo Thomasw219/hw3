@@ -51,7 +51,7 @@ class VAEEncoder(Encoder):
         # should return a tuple of 2 tensors, each of dimension self.latent_dim
         z = self.convs(x)
         z = self.fc(z.reshape(x.shape[0], self.conv_out_dim))
-        return z[:, :latent_dim], z[:, latent_dim:]
+        return z[:, :self.latent_dim], z[:, self.latent_dim:]
 
 class Decoder(nn.Module):
     def __init__(self, latent_dim, output_shape):
